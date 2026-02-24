@@ -49,7 +49,7 @@ public class Ocurrencia implements Serializable, Comparable<Ocurrencia> {
      */
     @Override
     public String toString() {
-        return "Total: " + FTG + " | Archivos: " + tfDocs.toString();
+        return FTG + ", en archivos: " + tfDocs.toString();
     }
     
     @Override

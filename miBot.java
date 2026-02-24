@@ -86,7 +86,7 @@ public class miBot {
         
         // Se recorre el heap y se va añadiendo cada palabra junto con su Ocurrencia a la salida
         for (Map.Entry<String, Ocurrencia> entrada : diccionario.entrySet()) {
-            sb.append(entrada.getKey()).append(" -> ").append(entrada.getValue().toString()).append("\n"); 
+            sb.append(entrada.getKey()).append(": ").append(entrada.getValue().toString()).append("\n"); 
         }
 
         // Si no es null la ruta de salida proporcionada, se escribe el resultado en esa ruta

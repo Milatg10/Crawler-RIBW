@@ -17,7 +17,7 @@ public class FichContPalabras {
      */
     public void acumularPalabras(Path rutaArchivo, Map<String, Ocurrencia> diccionario) {
         
-        System.out.println("[PROCESANDO] Archivo: " + rutaArchivo.getFileName());
+        System.out.println("Procesando archivo: " + rutaArchivo.getFileName());
         String nombreArchivo = rutaArchivo.getFileName().toString();
 
         // Lee el archivo línea a línea y va acumulando las palabras en el heap según los separadores definidos. 
@@ -36,7 +36,7 @@ public class FichContPalabras {
                                .registrarAparicion(nombreArchivo);
                 });
         } catch (IOException e) {
-            System.err.println("ERROR leyendo " + rutaArchivo + ": " + e.getMessage());
+            System.err.println("Error leyendo " + rutaArchivo + ": " + e.getMessage());
         }
     }
 }
