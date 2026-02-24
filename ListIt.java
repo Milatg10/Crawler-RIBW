@@ -1,36 +1,62 @@
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.File;
+import java.util.Map;
 import java.util.Queue;
-import java.util.stream.Stream;
-import java.util.TreeMap;
 
 public class ListIt {
 
-    private FichContPalabras contador = new FichContPalabras();
+    /*
+     * Revisa si es un directorio o archivo, añadiendo directorios a la cola y procesando archivos de texto plano.
+     * @param rutaActual La ruta del directorio o archivo a procesar.
+     * @param frontier La cola de rutas pendientes de procesar.
+     * @param diccionario El heap donde se acumulan las palabras.
+     */
+    public void procesar(String rutaActual, Queue<String> frontier, Map<String, Ocurrencia> diccionario) {
+        File f = new File(rutaActual);
 
-    // este metodo mira si es carpeta o archivo
-    public void procesar(String rutaString, Queue<String> cola, TreeMap<String, Long> mapaGlobal) {
-        Path ruta = Path.of(rutaString);
-
-        // si no existe o no se puede leer, paso
-        if (Files.notExists(ruta) || !Files.isReadable(ruta)) {
-            return; 
-        }
-
-        try {
-            if (Files.isDirectory(ruta)) {
-                // si es un directorio, meto todo lo que tenga dentro a la cola
-                // para que el bucle del main lo procese despues
-                try (Stream<Path> stream = Files.list(ruta)) {
-                    stream.forEach(hijo -> cola.add(hijo.toString()));
+        // Si es un directorio, se añaden sus directorios o archivos a la cola
+        if (f.isDirectory()) {
+            // listFiles() devuelve un array de File con el contenido del directorio, o null si no se puede acceder
+            File[] archivos = f.listFiles();
+            // Si el directorio no es null, se añaden sus subdirectorios y archivos a la cola (path absoluto)
+            if (archivos != null) {
+                for (File hijo : archivos) {
+                    frontier.add(hijo.getAbsolutePath());
                 }
-            } else {
-                // si es un archivo normal, llamo a la clase que cuenta las palabras
-                contador.acumularPalabras(ruta, mapaGlobal);
             }
-        } catch (IOException e) {
-            System.err.println("Error I/O en " + ruta + ": " + e.getMessage());
+        // Si es un archivo, se crea una instancia de FichContPalabras para llamar a su función acumularPalabras, a la que se le envía
+        // la ruta del archivo a procesar y el heap donde se van a guardar las palabras
+        } else if (f.isFile()) {
+            //String nombre = f.getName().toLowerCase();
+            //String extension = obtenerExtension(nombre);
+
+            // Switch para saltar las extensiones que NO queremos o elegir las que SÍ queremos
+            // switch (extension) {
+            //     case "txt":
+            //     case "csv":
+            //     case "md":
+            //         // Solo procesamos archivos de texto plano
+                     FichContPalabras lector = new FichContPalabras();
+                     lector.acumularPalabras(f.toPath(), diccionario);
+            //         break;
+            //     default:
+            //         // Saltamos ejecutables, imágenes, etc.
+            //         // System.out.println("[SALTADO] Extensión no soportada: " + f.getName());
+            //         break;
+            // }
         }
     }
+
+    /*
+     * Obtiene la extensión de un archivo a partir de su nombre.
+     * @param nombreArchivo El nombre del archivo.
+     * @return La extensión del archivo o una cadena vacía si no tiene extensión.
+     */
+    // private String obtenerExtension(String nombreArchivo) {
+    //     // lastIndexOf
+    //     int lastIndexOf = nombreArchivo.lastIndexOf(".");
+    //     if (lastIndexOf == -1) {
+    //         return ""; // No hay extensión
+    //     }
+    //     return nombreArchivo.substring(lastIndexOf + 1);
+    // }
 }
