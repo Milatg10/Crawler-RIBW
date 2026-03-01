@@ -18,7 +18,7 @@ public class FichContPalabras {
     public void acumularPalabras(Path rutaArchivo, Map<String, Ocurrencia> diccionario) {
         
         System.out.println("Procesando archivo: " + rutaArchivo.getFileName());
-        String nombreArchivo = rutaArchivo.getFileName().toString();
+        String nombreArchivo = rutaArchivo.toAbsolutePath().toString(); //Guarda ruta absoluta en el heap
 
         // Lee el archivo línea a línea y va acumulando las palabras en el heap según los separadores definidos. 
         try (var lineas = Files.lines(rutaArchivo, StandardCharsets.UTF_8)) {

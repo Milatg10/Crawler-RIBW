@@ -5,7 +5,7 @@ import java.util.TreeMap;
 
 public class Ocurrencia implements Serializable, Comparable<Ocurrencia> {
     
-    private Integer FTG; // Total Term Frequency (TTF) en todos los documentos
+    private Integer FTG; // Frecuencia Total Global en todos los documentos
     private Map<String, Integer> tfDocs; // Term Frequency (TF) por documento 
 
     /*

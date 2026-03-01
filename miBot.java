@@ -79,26 +79,37 @@ public class miBot {
      * @param rutaSalida La ruta del archivo de salida, o null si se imprime en consola.
      */
     private static void emitirResultados(TreeMap<String, Ocurrencia> diccionario, String rutaSalida) {
-        // Se usa para construir la salida de forma eficiente, ya que si usáramos System.out.println en cada iteración, 
-        // sería mucho más ineficente dado que cada palabra se imprimiría por separado 
-        StringBuilder sb = new StringBuilder();
-        sb.append("--- ÍNDICE INVERTIDO (Total palabras únicas: ").append(diccionario.size()).append(") ---\n");
-        
-        // Se recorre el heap y se va añadiendo cada palabra junto con su Ocurrencia a la salida
-        for (Map.Entry<String, Ocurrencia> entrada : diccionario.entrySet()) {
-            sb.append(entrada.getKey()).append(": ").append(entrada.getValue().toString()).append("\n"); 
-        }
-
-        // Si no es null la ruta de salida proporcionada, se escribe el resultado en esa ruta
-        if (rutaSalida != null) {
-            try {
-                Files.writeString(Path.of(rutaSalida), sb.toString());
-                System.out.println("Resultados guardados exitosamente en: " + rutaSalida);
-            } catch (IOException e) {
-                System.err.println("No se pudo escribir el archivo de salida: " + e.getMessage());
+        Scanner sc = new Scanner(System.in);
+        // Mientras no se pulse enter por consola, se muestra el índice invertido de la palabra que se escriba por consola
+        while(true) {
+            System.out.println("Escribe la palabra a buscar o ESC para salir: ");
+            String palabra = sc.nextLine(); 
+            if(palabra.equals("ESC")) {
+                break;
             }
-        } else {
-            System.out.println(sb.toString());
+            else if(diccionario.containsKey(palabra)){
+                // Si no es null la ruta de salida proporcionada, se escribe el resultado en esa ruta
+                if(rutaSalida != null) {
+                    try {
+                        Files.writeString(Path.of(rutaSalida), palabra + ": " + diccionario.get(palabra).toString() + "\n");
+                        System.out.println("Resultados guardados exitosamente en: " + rutaSalida);
+                    } catch (IOException e) {
+                        System.err.println("No se pudo escribir el archivo de salida: " + e.getMessage());
+                    }
+                }
+                else{
+                    // Se usa para construir la salida de forma eficiente, ya que si usáramos System.out.println en cada iteración, 
+                    // sería mucho más ineficente dado que cada palabra se imprimiría por separado 
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("--- ÍNDICE INVERTIDO (Total palabras únicas: ").append(diccionario.size()).append(") ---\n");
+                    sb.append(palabra).append(": ").append(diccionario.get(palabra).toString()).append("\n");
+                    System.out.println(sb.toString());
+                }
+            }
+            else {
+                System.out.println("La palabra '" + palabra + "' no se encuentra en el índice invertido.");
+            }
         }
+        sc.close();
     }
 }
