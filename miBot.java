@@ -89,9 +89,9 @@ public class miBot {
         }
         // Mientras no se pulse enter por consola, se muestra el índice invertido de la palabra que se escriba por consola
         while(true) {
-            System.out.println("Escribe la palabra a buscar o ESC para salir: ");
+            System.out.println("Escribe la palabra a buscar o # para salir: ");
             String palabra = sc.nextLine(); 
-            if(palabra.equals("ESC") || palabra.equals("esc")){
+            if(palabra.equals("#")){
                 System.out.println("Saliendo del programa...");
                 break;
             }

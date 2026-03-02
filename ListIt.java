@@ -26,23 +26,28 @@ public class ListIt {
         // Si es un archivo, se crea una instancia de FichContPalabras para llamar a su función acumularPalabras, a la que se le envía
         // la ruta del archivo a procesar y el heap donde se van a guardar las palabras
         } else if (f.isFile()) {
-            //String nombre = f.getName().toLowerCase();
-            //String extension = obtenerExtension(nombre);
+            String nombre = f.getName().toLowerCase();
+            String extension = obtenerExtension(nombre);
 
-            // Switch para saltar las extensiones que NO queremos o elegir las que SÍ queremos
-            // switch (extension) {
-            //     case "txt":
-            //     case "csv":
-            //     case "md":
-            //         // Solo procesamos archivos de texto plano
+            //Switch para saltar las extensiones que NO queremos o elegir las que SÍ queremos
+            switch (extension) {
+                case "txt":
+                case "csv":
+                case "md":
+                case "cpp":
+                case "java":
+                case "xml":
+                case "json":
+                case "html":
+                    // Solo procesamos archivos de texto plano
                      FichContPalabras lector = new FichContPalabras();
                      lector.acumularPalabras(f.toPath(), diccionario);
-            //         break;
-            //     default:
-            //         // Saltamos ejecutables, imágenes, etc.
-            //         // System.out.println("[SALTADO] Extensión no soportada: " + f.getName());
-            //         break;
-            // }
+                    break;
+                default:
+                    // Saltamos ejecutables, imágenes, etc.
+                    System.out.println("[SALTADO] Extensión no soportada: " + f.getName());
+                    break;
+            }
         }
     }
 
@@ -51,12 +56,12 @@ public class ListIt {
      * @param nombreArchivo El nombre del archivo.
      * @return La extensión del archivo o una cadena vacía si no tiene extensión.
      */
-    // private String obtenerExtension(String nombreArchivo) {
-    //     // lastIndexOf
-    //     int lastIndexOf = nombreArchivo.lastIndexOf(".");
-    //     if (lastIndexOf == -1) {
-    //         return ""; // No hay extensión
-    //     }
-    //     return nombreArchivo.substring(lastIndexOf + 1);
-    // }
+    private String obtenerExtension(String nombreArchivo) {
+        // lastIndexOf
+        int lastIndexOf = nombreArchivo.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return ""; // No hay extensión
+        }
+        return nombreArchivo.substring(lastIndexOf + 1);
+    }
 }
