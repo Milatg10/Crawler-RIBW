@@ -1,16 +1,1 @@
---- ÍNDICE INVERTIDO (Total palabras únicas: 15) ---
-4 -> Total: 1 | Archivos: {fich4.txt=1}
-cosa -> Total: 2 | Archivos: {fich2..txt=2}
-crawler -> Total: 1 | Archivos: {fich4.txt=1}
-de -> Total: 1 | Archivos: {fich4.txt=1}
-es -> Total: 3 | Archivos: {fich1.txt=2, fich3.txt=1}
-fichero -> Total: 1 | Archivos: {fich4.txt=1}
-la -> Total: 6 | Archivos: {fich1.txt=4, fich3.txt=2}
-lol -> Total: 1 | Archivos: {fich4.txt=1}
-mamá -> Total: 6 | Archivos: {fich1.txt=4, fich3.txt=2}
-mejor -> Total: 3 | Archivos: {fich1.txt=2, fich3.txt=1}
-mi -> Total: 6 | Archivos: {fich1.txt=4, fich3.txt=2}
-mía -> Total: 3 | Archivos: {fich1.txt=2, fich3.txt=1}
-otra -> Total: 2 | Archivos: {fich2..txt=2}
-prueba -> Total: 1 | Archivos: {fich4.txt=1}
-xd -> Total: 1 | Archivos: {fich4.txt=1}
+mejor: 3, en archivos: {C:\Users\milat\Desktop\RIBW\Primer Labo\Crawler-RIBW\DIR1\DIR2\fich1.txt=1, C:\Users\milat\Desktop\RIBW\Primer Labo\Crawler-RIBW\DIR1\fich1.txt=1, C:\Users\milat\Desktop\RIBW\Primer Labo\Crawler-RIBW\DIR1\fich3.txt=1}

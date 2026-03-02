@@ -79,12 +79,20 @@ public class miBot {
      * @param rutaSalida La ruta del archivo de salida, o null si se imprime en consola.
      */
     private static void emitirResultados(TreeMap<String, Ocurrencia> diccionario, String rutaSalida) {
-        Scanner sc = new Scanner(System.in);
+        Scanner sc;
+        // Si ejecutamos desde una terminal real (CMD, PowerShell, etc.), usamos su codificación nativa
+        if (System.console() != null) {
+            sc = new Scanner(System.console().reader());
+        } else {
+            // Si ejecutamos desde un IDE (Eclipse, IntelliJ, NetBeans), usamos la por defecto
+            sc = new Scanner(System.in);
+        }
         // Mientras no se pulse enter por consola, se muestra el índice invertido de la palabra que se escriba por consola
         while(true) {
             System.out.println("Escribe la palabra a buscar o ESC para salir: ");
             String palabra = sc.nextLine(); 
-            if(palabra.equals("ESC")) {
+            if(palabra.equals("ESC") || palabra.equals("esc")){
+                System.out.println("Saliendo del programa...");
                 break;
             }
             else if(diccionario.containsKey(palabra)){

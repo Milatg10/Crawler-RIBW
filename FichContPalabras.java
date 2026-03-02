@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -21,7 +20,7 @@ public class FichContPalabras {
         String nombreArchivo = rutaArchivo.toAbsolutePath().toString(); //Guarda ruta absoluta en el heap
 
         // Lee el archivo línea a línea y va acumulando las palabras en el heap según los separadores definidos. 
-        try (var lineas = Files.lines(rutaArchivo, StandardCharsets.UTF_8)) {
+        try (var lineas = Files.lines(rutaArchivo)) {
             lineas
                 // Se divide cada línea en palabras usando los separadores y devuelve un Stream<String[]> (cada elemento es un array de palabras de esa línea)
                 .map(linea -> linea.split(SEPARADORES))
