@@ -6,7 +6,7 @@ import java.util.TreeMap;
 public class Ocurrencia implements Serializable, Comparable<Ocurrencia> {
     
     private Integer FTG; // Frecuencia Total Global en todos los documentos
-    private Map<String, Integer> tfDocs; // Term Frequency (TF) por documento 
+    private Map<Integer, Integer> tfDocs; // Term Frequency (TF) por documento 
 
     /*
      * Constructor de la clase Ocurrencia.
@@ -19,12 +19,12 @@ public class Ocurrencia implements Serializable, Comparable<Ocurrencia> {
 
     /*
      * Registra la aparición de una palabra en un archivo específico.
-     * @param nombreArchivo El nombre del archivo donde se encontró la palabra.
+     * @param idArchivo El ID del archivo donde se encontró la palabra.
      */
-    public void registrarAparicion(String nombreArchivo) {
+    public void registrarAparicion(Integer idArchivo) {
         this.FTG++; // Sumamos 1 al total global
         // Sumamos 1 a la cuenta específica de este archivo
-        this.tfDocs.put(nombreArchivo, this.tfDocs.getOrDefault(nombreArchivo, 0) + 1);
+        this.tfDocs.put(idArchivo, this.tfDocs.getOrDefault(idArchivo, 0) + 1);
     }
 
     /*
@@ -39,7 +39,7 @@ public class Ocurrencia implements Serializable, Comparable<Ocurrencia> {
      * Devuelve el heap de apariciones por archivo.
      * @return El mapa con las apariciones por archivo.
      */
-    public Map<String, Integer> getTfDocs() {
+    public Map<Integer, Integer> getTfDocs() {
         return tfDocs;
     }
 

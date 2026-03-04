@@ -1,6 +1,7 @@
 import java.io.File;
 import java.util.Map;
 import java.util.Queue;
+import java.util.List;
 
 public class ListIt {
 
@@ -9,8 +10,9 @@ public class ListIt {
      * @param rutaActual La ruta del directorio o archivo a procesar.
      * @param frontier La cola de rutas pendientes de procesar.
      * @param diccionario El heap donde se acumulan las palabras.
+     * @param listaArchivos La lista de archivos procesados.
      */
-    public void procesar(String rutaActual, Queue<String> frontier, Map<String, Ocurrencia> diccionario) {
+    public void procesar(String rutaActual, Queue<String> frontier, Map<String, Ocurrencia> diccionario, List<String> listaArchivos) {
         File f = new File(rutaActual);
 
         // Si es un directorio, se añaden sus directorios o archivos a la cola
@@ -39,9 +41,15 @@ public class ListIt {
                 case "xml":
                 case "json":
                 case "html":
-                    // Solo procesamos archivos de texto plano
-                     FichContPalabras lector = new FichContPalabras();
-                     lector.acumularPalabras(f.toPath(), diccionario);
+                    String pathAbsoluto = f.getAbsolutePath();
+                    
+                    // Asignamos ID. Como se inserta al final, el índice será el tamaño actual de la lista.
+                    Integer idArchivo = listaArchivos.size(); 
+                    listaArchivos.add(pathAbsoluto);
+
+                    FichContPalabras lector = new FichContPalabras();
+                    // Pasamos el ID al lector
+                    lector.acumularPalabras(f.toPath(), idArchivo, diccionario);
                     break;
                 default:
                     // Saltamos ejecutables, imágenes, etc.
