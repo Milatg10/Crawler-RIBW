@@ -1,4 +1,6 @@
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 /*
@@ -83,79 +85,81 @@ public class miBot {
     }
 
     /*
-     * Saca los resultados del heap en consola o en un archivo de salida.
+     * Saca los resultados del heap en consola o en un archivo de salida,
+     * incluyendo los sinónimos de la palabra buscada.
      * @param diccionario El heap con las palabras y sus ocurrencias.
      * @param listaArchivos La lista de archivos procesados.
      * @param rutaSalida La ruta del archivo de salida, o null si se imprime en consola.
-     * @param thesauro El gestor del thesauro para validar palabras.
+     * @param thesauro El gestor del thesauro para validar y obtener sinónimos.
      */
     private static void emitirResultados(TreeMap<String, Ocurrencia> diccionario, ArrayList<String> listaArchivos, String rutaSalida, ThesauroGestion thesauro) {
-        Scanner sc = new Scanner(System.in);
+        Scanner sc;
+        if (System.console() != null) {
+            sc = new Scanner(System.console().reader());
+        } else {
+            sc = new Scanner(System.in);
+        }
+
         while(true) {
-            System.out.println("Escribe los términos a buscar o # para salir: ");
-            String input = sc.nextLine().toLowerCase().trim();
-            if(input.equals("#")) break;
+            System.out.println("Escribe la palabra a buscar o # para salir: ");
+            // Lo guardamos todo junto tal cual lo escribe el usuario 
+            String palabraBuscada = sc.nextLine().toLowerCase().trim(); 
+            if(palabraBuscada.equals("#")){
+                System.out.println("Saliendo del programa...");
+                break;
+            }
 
-            // Separamos los términos por espacios y procesamos cada uno, buscando también sus sinónimos en el thesauro
-            String[] terminosBuscados = input.split("\\s+");
-            
-            // Estructura para calcular el ranking: ID Archivo -> [NumTérminosDiferentesEncontrados, FrecuenciaTotal]
-            // Usamos un array de 2 enteros: int[]{terminosDiferentes, frecuenciaAcumulada}
-            Map<Integer, int[]> rankingDocs = new HashMap<>();
+            //Juntar la palabra buscada y sus sinónimos en una lista
+            List<String> terminosABuscar = new ArrayList<>();
+            terminosABuscar.add(palabraBuscada);
+            terminosABuscar.addAll(thesauro.getSinonimos(palabraBuscada));
 
-            for (String terminoOriginal : terminosBuscados) {
-                // Montamos la lista de lo que vale para este término (La palabra + sus sinónimos)
-                Set<String> terminosValidos = new HashSet<>();
-                terminosValidos.add(terminoOriginal);
-                terminosValidos.addAll(thesauro.getSinonimos(terminoOriginal));
+            //Acumular resultados (ID Archivo -> Frecuencia total de palabra + sinónimos)
+            TreeMap<Integer, Integer> resultadosAcumulados = new TreeMap<>();
+            int ftgTotal = 0; // Frecuencia total global sumando sinónimos
+            boolean encontrado = false;
 
-                // Guardamos qué archivos ya han puntuado para ESTE término original (para no contar el sinónimo como un término distinto)
-                Set<Integer> archivosPuntuadosParaEsteTermino = new HashSet<>();
+            for (String termino : terminosABuscar) {
+                if (diccionario.containsKey(termino)) {
+                    encontrado = true;
+                    Ocurrencia oc = diccionario.get(termino);
+                    ftgTotal += oc.getFTG(); // Sumamos al global
 
-                for (String tValido : terminosValidos) {
-                    if (diccionario.containsKey(tValido)) {
-                        Map<Integer, Integer> tfDocs = diccionario.get(tValido).getTfDocs(); 
-                        for (Map.Entry<Integer, Integer> entry : tfDocs.entrySet()) {
-                            int idDoc = entry.getKey();
-                            int freq = entry.getValue();
-
-                            rankingDocs.putIfAbsent(idDoc, new int[]{0, 0});
-                            
-                            // Si es la primera vez que este doc ve el término o sus sinónimos, le sumamos 1 a los términos encontrados
-                            if (!archivosPuntuadosParaEsteTermino.contains(idDoc)) {
-                                rankingDocs.get(idDoc)[0] += 1;
-                                archivosPuntuadosParaEsteTermino.add(idDoc);
-                            }
-                            // Sumamos la frecuencia total
-                            rankingDocs.get(idDoc)[1] += freq;
-                        }
+                    // Sumamos las apariciones de cada archivo
+                    for (Map.Entry<Integer, Integer> entry : oc.getTfDocs().entrySet()) {
+                        int idDoc = entry.getKey();
+                        int freq = entry.getValue();
+                        resultadosAcumulados.put(idDoc, resultadosAcumulados.getOrDefault(idDoc, 0) + freq);
                     }
                 }
             }
 
-            // Ordenar los resultados (Ranking)
-            List<Map.Entry<Integer, int[]>> listaRanking = new ArrayList<>(rankingDocs.entrySet());
-            listaRanking.sort((a, b) -> {
-                int[] datosA = a.getValue();
-                int[] datosB = b.getValue();
-                // 1º Prioridad: Mayor número de términos encontrados distintos (incluyendo sinónimos)
-                if (datosA[0] != datosB[0]) {
-                    return Integer.compare(datosB[0], datosA[0]); 
-                }
-                // 2º Prioridad: Mayor frecuencia total
-                return Integer.compare(datosB[1], datosA[1]);
-            });
-
-            // Imprimir
-            if (listaRanking.isEmpty()) {
-                System.out.println("No se encontraron coincidencias.");
+            //Imprimir resultados 
+            if (!encontrado) {
+                System.out.println("La palabra '" + palabraBuscada + "' (ni sus sinónimos) se encuentran en el índice invertido.");
             } else {
-                System.out.println("--- RESULTADOS RANKING ---");
-                for (Map.Entry<Integer, int[]> entry : listaRanking) {
-                    String ruta = listaArchivos.get(entry.getKey());
-                    //int termsFound = entry.getValue()[0];
-                    int totalFreq = entry.getValue()[1];
-                    System.out.println("-> " + ruta + " | Apariciones en fichero: " + totalFreq);
+                StringBuilder resultadoLegible = new StringBuilder();
+                resultadoLegible.append(ftgTotal).append(", en archivos: {");
+
+                boolean primero = true;
+                for (Map.Entry<Integer, Integer> entry : resultadosAcumulados.entrySet()) {
+                    if (!primero) resultadoLegible.append(", ");
+                    String rutaAbsoluta = listaArchivos.get(entry.getKey());
+                    resultadoLegible.append("\n").append(rutaAbsoluta).append("=").append(entry.getValue());
+                    primero = false;
+                }
+                resultadoLegible.append("}");
+
+                if (rutaSalida != null) {
+                    try {
+                        Files.writeString(Path.of(rutaSalida), palabraBuscada + ": " + resultadoLegible.toString() + "\n");
+                        System.out.println("Resultados guardados exitosamente en: " + rutaSalida);
+                    } catch (IOException e) {
+                        System.err.println("No se pudo escribir el archivo de salida: " + e.getMessage());
+                    }
+                } else {
+                    System.out.println("--- RESULTADOS ---");
+                    System.out.println(palabraBuscada + ": " + resultadoLegible.toString());
                 }
             }
         }
