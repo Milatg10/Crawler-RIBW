@@ -11,8 +11,9 @@ public class ListIt {
      * @param frontier La cola de rutas pendientes de procesar.
      * @param diccionario El heap donde se acumulan las palabras.
      * @param listaArchivos La lista de archivos procesados.
+     * @param thesauro El gestor del thesauro para validar palabras.
      */
-    public void procesar(String rutaActual, Queue<String> frontier, Map<String, Ocurrencia> diccionario, List<String> listaArchivos) {
+    public void procesar(String rutaActual, Queue<String> frontier, Map<String, Ocurrencia> diccionario, List<String> listaArchivos, ThesauroGestion thesauro) {
         File f = new File(rutaActual);
 
         // Si es un directorio, se añaden sus directorios o archivos a la cola
@@ -49,7 +50,7 @@ public class ListIt {
 
                     FichContPalabras lector = new FichContPalabras();
                     // Pasamos el ID al lector
-                    lector.acumularPalabras(f.toPath(), idArchivo, diccionario);
+                    lector.acumularPalabras(f.toPath(), idArchivo, diccionario, thesauro);
                     break;
                 default:
                     // Saltamos ejecutables, imágenes, etc.

@@ -1,6 +1,4 @@
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 /*
@@ -33,6 +31,11 @@ public class miBot {
 
         // Se verifica si existe un archivo ya creado fi.dir para cargarlo directamente en memoria y evitar recorrelo todo de nuevo
         File fCache = new File(ARCHIVO_CACHE);
+
+        // Se instancia el gestor del thesauro y se inicializa con el archivo de texto del thesauro
+        String rutaThesauroTxt = "Thesaurus_es_ES.txt"; 
+        ThesauroGestion thesauro = new ThesauroGestion();
+        thesauro.inicializar(rutaThesauroTxt);
         
         //Si existe y no es directorio, se intenta cargar el heap 
         if (fCache.exists() && !fCache.isDirectory()) {
@@ -64,7 +67,7 @@ public class miBot {
             //Mientras la cola no esté vacía, se añade y se procesa cada directorio o archivo 
             while (!frontier.isEmpty()) {
                 String rutaActual = frontier.poll();
-                listador.procesar(rutaActual, frontier, diccionario, listaArchivos);
+                listador.procesar(rutaActual, frontier, diccionario, listaArchivos, thesauro);
             }
 
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(ARCHIVO_CACHE))) {
@@ -76,7 +79,7 @@ public class miBot {
             }
         }
 
-        emitirResultados(diccionario, listaArchivos, rutaSalida);
+        emitirResultados(diccionario, listaArchivos, rutaSalida, thesauro);
     }
 
     /*
@@ -84,60 +87,76 @@ public class miBot {
      * @param diccionario El heap con las palabras y sus ocurrencias.
      * @param listaArchivos La lista de archivos procesados.
      * @param rutaSalida La ruta del archivo de salida, o null si se imprime en consola.
+     * @param thesauro El gestor del thesauro para validar palabras.
      */
-    private static void emitirResultados(TreeMap<String, Ocurrencia> diccionario, ArrayList<String> listaArchivos, String rutaSalida) {
-        Scanner sc;
-        // Si ejecutamos desde una terminal real (CMD, PowerShell, etc.), usamos su codificación nativa
-        if (System.console() != null) {
-            sc = new Scanner(System.console().reader());
-        } else {
-            // Si ejecutamos desde un IDE (Eclipse, IntelliJ, NetBeans), usamos la por defecto
-            sc = new Scanner(System.in);
-        }
-        // Mientras no se pulse enter por consola, se muestra el índice invertido de la palabra que se escriba por consola
+    private static void emitirResultados(TreeMap<String, Ocurrencia> diccionario, ArrayList<String> listaArchivos, String rutaSalida, ThesauroGestion thesauro) {
+        Scanner sc = new Scanner(System.in);
         while(true) {
-            System.out.println("Escribe la palabra a buscar o # para salir: ");
-            String palabra = sc.nextLine(); 
-            if(palabra.equals("#")){
-                System.out.println("Saliendo del programa...");
-                break;
-            }
-            else if(diccionario.containsKey(palabra)){
-                Ocurrencia ocurrencia = diccionario.get(palabra);
-                
-                // --- RECONSTRUIR EL STRING DE SALIDA ---
-                StringBuilder resultadoLegible = new StringBuilder();
-                resultadoLegible.append(ocurrencia.getFTG()).append(", en archivos: {");
-                
-                boolean primero = true;
-                // Iteramos sobre las ocurrencias (ID -> TF) y sacamos la ruta de la lista
-                for (Map.Entry<Integer, Integer> entry : ocurrencia.getTfDocs().entrySet()) {
-                    if (!primero) resultadoLegible.append(", ");
-                    String rutaAbsoluta = listaArchivos.get(entry.getKey()); // Traducción O(1)
-                    resultadoLegible.append("\n").append(rutaAbsoluta).append("=").append(entry.getValue());
-                    primero = false;
-                }
-                resultadoLegible.append("}");
-                // Si no es null la ruta de salida proporcionada, se escribe el resultado en esa ruta
-                if(rutaSalida != null) {
-                    try {
-                        Files.writeString(Path.of(rutaSalida), palabra + ": " + resultadoLegible.toString() + "\n");
-                        System.out.println("Resultados guardados exitosamente en: " + rutaSalida);
-                    } catch (IOException e) {
-                        System.err.println("No se pudo escribir el archivo de salida: " + e.getMessage());
+            System.out.println("Escribe los términos a buscar o # para salir: ");
+            String input = sc.nextLine().toLowerCase().trim();
+            if(input.equals("#")) break;
+
+            // Separamos los términos por espacios y procesamos cada uno, buscando también sus sinónimos en el thesauro
+            String[] terminosBuscados = input.split("\\s+");
+            
+            // Estructura para calcular el ranking: ID Archivo -> [NumTérminosDiferentesEncontrados, FrecuenciaTotal]
+            // Usamos un array de 2 enteros: int[]{terminosDiferentes, frecuenciaAcumulada}
+            Map<Integer, int[]> rankingDocs = new HashMap<>();
+
+            for (String terminoOriginal : terminosBuscados) {
+                // Montamos la lista de lo que vale para este término (La palabra + sus sinónimos)
+                Set<String> terminosValidos = new HashSet<>();
+                terminosValidos.add(terminoOriginal);
+                terminosValidos.addAll(thesauro.getSinonimos(terminoOriginal));
+
+                // Guardamos qué archivos ya han puntuado para ESTE término original (para no contar el sinónimo como un término distinto)
+                Set<Integer> archivosPuntuadosParaEsteTermino = new HashSet<>();
+
+                for (String tValido : terminosValidos) {
+                    if (diccionario.containsKey(tValido)) {
+                        Map<Integer, Integer> tfDocs = diccionario.get(tValido).getTfDocs(); 
+                        for (Map.Entry<Integer, Integer> entry : tfDocs.entrySet()) {
+                            int idDoc = entry.getKey();
+                            int freq = entry.getValue();
+
+                            rankingDocs.putIfAbsent(idDoc, new int[]{0, 0});
+                            
+                            // Si es la primera vez que este doc ve el término o sus sinónimos, le sumamos 1 a los términos encontrados
+                            if (!archivosPuntuadosParaEsteTermino.contains(idDoc)) {
+                                rankingDocs.get(idDoc)[0] += 1;
+                                archivosPuntuadosParaEsteTermino.add(idDoc);
+                            }
+                            // Sumamos la frecuencia total
+                            rankingDocs.get(idDoc)[1] += freq;
+                        }
                     }
                 }
-                else{
-                    // Se usa para construir la salida de forma eficiente, ya que si usáramos System.out.println en cada iteración, 
-                    // sería mucho más ineficente dado que cada palabra se imprimiría por separado 
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("--- ÍNDICE INVERTIDO (Total palabras únicas: ").append(diccionario.size()).append(") ---\n");
-                    sb.append(palabra).append(": ").append(resultadoLegible.toString()).append("\n");
-                    System.out.println(sb.toString());
-                }
             }
-            else {
-                System.out.println("La palabra '" + palabra + "' no se encuentra en el índice invertido.");
+
+            // Ordenar los resultados (Ranking)
+            List<Map.Entry<Integer, int[]>> listaRanking = new ArrayList<>(rankingDocs.entrySet());
+            listaRanking.sort((a, b) -> {
+                int[] datosA = a.getValue();
+                int[] datosB = b.getValue();
+                // 1º Prioridad: Mayor número de términos encontrados distintos (incluyendo sinónimos)
+                if (datosA[0] != datosB[0]) {
+                    return Integer.compare(datosB[0], datosA[0]); 
+                }
+                // 2º Prioridad: Mayor frecuencia total
+                return Integer.compare(datosB[1], datosA[1]);
+            });
+
+            // Imprimir
+            if (listaRanking.isEmpty()) {
+                System.out.println("No se encontraron coincidencias.");
+            } else {
+                System.out.println("--- RESULTADOS RANKING ---");
+                for (Map.Entry<Integer, int[]> entry : listaRanking) {
+                    String ruta = listaArchivos.get(entry.getKey());
+                    //int termsFound = entry.getValue()[0];
+                    int totalFreq = entry.getValue()[1];
+                    System.out.println("-> " + ruta + " | Apariciones en fichero: " + totalFreq);
+                }
             }
         }
         sc.close();
