@@ -22,8 +22,8 @@ public class Ocurrencia implements Serializable, Comparable<Ocurrencia> {
      * @param idArchivo El ID del archivo donde se encontró la palabra.
      */
     public void registrarAparicion(Integer idArchivo) {
-        this.FTG++; // Sumamos 1 al total global
-        // Sumamos 1 a la cuenta específica de este archivo
+        this.FTG++; // Sumamos 1 al global
+        // Sumamos 1 a la cuenta específica de este archivo (¡La clave está en el +1 del final!)
         this.tfDocs.put(idArchivo, this.tfDocs.getOrDefault(idArchivo, 0) + 1);
     }
 
