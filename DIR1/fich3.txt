@@ -1,3 +1,7 @@
 ("loco mi es la
 mejor. La mia.
+<<<<<<< HEAD
 Mi mamá. volverse")
+=======
+Mi mamá. volverseloco") ababol amapola ababol ababol 
+>>>>>>> 09a44f0502efed210d5ed19031c525b57ab775f8

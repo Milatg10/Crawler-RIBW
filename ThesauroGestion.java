@@ -38,6 +38,7 @@ public class ThesauroGestion implements Serializable {
                 for (String token : tokensBrutos) {
                     // Limpieza: quitar etiquetas entre paréntesis y quitar espacios en blanco
                     String limpio = token.replaceAll("\\(.*?\\)", "").replaceAll("\\s+", "").toLowerCase().trim();
+                    // Si después de limpiar no queda vacío, lo añadimos a la lista de tokens limpios
                     if (!limpio.isEmpty()) {
                         tokensLimpios.add(limpio);
                     }

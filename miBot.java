@@ -85,12 +85,8 @@ public class miBot {
     }
 
     /*
-     * Saca los resultados del heap en consola o en un archivo de salida,
-     * incluyendo los sinónimos de la palabra buscada.
-     * @param diccionario El heap con las palabras y sus ocurrencias.
-     * @param listaArchivos La lista de archivos procesados.
-     * @param rutaSalida La ruta del archivo de salida, o null si se imprime en consola.
-     * @param thesauro El gestor del thesauro para validar y obtener sinónimos.
+     * Saca los resultados dividiendo el ranking en dos bloques: primero la palabra literal 
+     * y debajo los sinónimos. Ambos bloques se ordenan por el peso FT/FTG de mayor a menor.
      */
     private static void emitirResultados(TreeMap<String, Ocurrencia> diccionario, ArrayList<String> listaArchivos, String rutaSalida, ThesauroGestion thesauro) {
         Scanner sc;
@@ -100,66 +96,109 @@ public class miBot {
             sc = new Scanner(System.in);
         }
 
-        while(true) {
+        while (true) {
             System.out.println("Escribe la palabra a buscar o # para salir: ");
-            // Lo guardamos todo junto tal cual lo escribe el usuario 
-            String palabraBuscada = sc.nextLine().toLowerCase().trim(); 
-            if(palabraBuscada.equals("#")){
+            String palabraBuscada = sc.nextLine().toLowerCase().trim();
+            if (palabraBuscada.equals("#")) {
                 System.out.println("Saliendo del programa...");
                 break;
             }
 
-            //Juntar la palabra buscada y sus sinónimos en una lista
-            List<String> terminosABuscar = new ArrayList<>();
-            terminosABuscar.add(palabraBuscada);
-            terminosABuscar.addAll(thesauro.getSinonimos(palabraBuscada));
+            // Creamos dos listas separadas. 
+            // Formato array: { idDoc (int), termino (String), FT (int), FTG (int), peso (double) }
+            List<Object[]> listaLiterales = new ArrayList<>();
+            List<Object[]> listaSinonimos = new ArrayList<>();
+            
+            // Set para no repetir el archivo abajo si ya apareció arriba con la palabra literal
+            Set<Integer> docsYaProcesados = new HashSet<>();
 
-            //Acumular resultados (ID Archivo -> Frecuencia total de palabra + sinónimos)
-            TreeMap<Integer, Integer> resultadosAcumulados = new TreeMap<>();
-            int ftgTotal = 0; // Frecuencia total global sumando sinónimos
-            boolean encontrado = false;
+            // 1. BLOQUE DE LA PALABRA LITERAL ("ababol")
+            if (diccionario.containsKey(palabraBuscada)) {
+                Ocurrencia oc = diccionario.get(palabraBuscada);
+                int ftg = oc.getFTG();
+                for (Map.Entry<Integer, Integer> entry : oc.getTfDocs().entrySet()) {
+                    int idDoc = entry.getKey();
+                    int ft = entry.getValue(); // Frecuencia en este archivo
+                    double peso = (double) ft / ftg; // Calculamos la división FT / FTG
+                    
+                    listaLiterales.add(new Object[]{idDoc, palabraBuscada, ft, ftg, peso});
+                    docsYaProcesados.add(idDoc); 
+                }
+            }
 
-            for (String termino : terminosABuscar) {
-                if (diccionario.containsKey(termino)) {
-                    encontrado = true;
-                    Ocurrencia oc = diccionario.get(termino);
-                    ftgTotal += oc.getFTG(); // Sumamos al global
-
-                    // Sumamos las apariciones de cada archivo
+            // 2. BLOQUE DE LOS SINÓNIMOS ("amapola", "necio"...)
+            ArrayList<String> sinonimos = thesauro.getSinonimos(palabraBuscada);
+            for (String sin : sinonimos) {
+                if (diccionario.containsKey(sin)) {
+                    Ocurrencia oc = diccionario.get(sin);
+                    int ftg = oc.getFTG();
                     for (Map.Entry<Integer, Integer> entry : oc.getTfDocs().entrySet()) {
                         int idDoc = entry.getKey();
-                        int freq = entry.getValue();
-                        resultadosAcumulados.put(idDoc, resultadosAcumulados.getOrDefault(idDoc, 0) + freq);
+                        int ft = entry.getValue();
+                        
+                        // Solo lo metemos en sinónimos si no salió ya en la lista de literales
+                        if (!docsYaProcesados.contains(idDoc)) {
+                            double peso = (double) ft / ftg; // Calculamos la división FT / FTG
+                            listaSinonimos.add(new Object[]{idDoc, sin, ft, ftg, peso});
+                            docsYaProcesados.add(idDoc);
+                        }
                     }
                 }
             }
 
-            //Imprimir resultados 
-            if (!encontrado) {
-                System.out.println("La palabra '" + palabraBuscada + "' (ni sus sinónimos) se encuentran en el índice invertido.");
-            } else {
-                StringBuilder resultadoLegible = new StringBuilder();
-                resultadoLegible.append(ftgTotal).append(", en archivos: {");
+            // 3. ORDENAR AMBOS BLOQUES POR EL PESO (FT / FTG) DE MAYOR A MENOR
+            // Compara la posición [4] del array, que es donde guardamos el 'peso' (el double)
+            Comparator<Object[]> comparadorPeso = (a, b) -> Double.compare((Double) b[4], (Double) a[4]);
+            listaLiterales.sort(comparadorPeso);
+            listaSinonimos.sort(comparadorPeso);
 
-                boolean primero = true;
-                for (Map.Entry<Integer, Integer> entry : resultadosAcumulados.entrySet()) {
-                    if (!primero) resultadoLegible.append(", ");
-                    String rutaAbsoluta = listaArchivos.get(entry.getKey());
-                    resultadoLegible.append("\n").append(rutaAbsoluta).append("=").append(entry.getValue());
-                    primero = false;
+            // 4. IMPRIMIR LOS RESULTADOS (Primero toda la lista literal, luego toda la lista de sinónimos)
+            if (listaLiterales.isEmpty() && listaSinonimos.isEmpty()) {
+                System.out.println("La palabra '" + palabraBuscada + "' y sus sinónimos no se encuentran indexados.");
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append("--- RESULTADOS PARA '").append(palabraBuscada).append("' ---\n");
+                
+                // Imprimir primero los literales
+                for (Object[] doc : listaLiterales) {
+                    int idDoc = (Integer) doc[0];
+                    String termino = (String) doc[1];
+                    int ft = (Integer) doc[2];
+                    int ftg = (Integer) doc[3];
+                    double peso = (Double) doc[4];
+                    String ruta = listaArchivos.get(idDoc);
+                    
+                    // Mostramos la ruta, la palabra, el peso formateado con 4 decimales y los valores originales
+                    sb.append("-> ").append(ruta)
+                      .append(" | [LITERAL] '").append(termino).append("'")
+                      .append(" | Peso: ").append(String.format("%.4f", peso))
+                      .append(" (FT:").append(ft).append(" / FTG:").append(ftg).append(")\n");
                 }
-                resultadoLegible.append("}");
+
+                // Imprimir debajo los sinónimos
+                for (Object[] doc : listaSinonimos) {
+                    int idDoc = (Integer) doc[0];
+                    String termino = (String) doc[1];
+                    int ft = (Integer) doc[2];
+                    int ftg = (Integer) doc[3];
+                    double peso = (Double) doc[4];
+                    String ruta = listaArchivos.get(idDoc);
+                    
+                    sb.append("-> ").append(ruta)
+                      .append(" | [SINÓNIMO] '").append(termino).append("'")
+                      .append(" | Peso: ").append(String.format("%.4f", peso))
+                      .append(" (FT:").append(ft).append(" / FTG:").append(ftg).append(")\n");
+                }
 
                 if (rutaSalida != null) {
                     try {
-                        Files.writeString(Path.of(rutaSalida), palabraBuscada + ": " + resultadoLegible.toString() + "\n");
-                        System.out.println("Resultados guardados exitosamente en: " + rutaSalida);
+                        Files.writeString(Path.of(rutaSalida), sb.toString());
+                        System.out.println("Resultados guardados en: " + rutaSalida);
                     } catch (IOException e) {
-                        System.err.println("No se pudo escribir el archivo de salida: " + e.getMessage());
+                        System.err.println("Error al escribir el archivo: " + e.getMessage());
                     }
                 } else {
-                    System.out.println("--- RESULTADOS ---");
-                    System.out.println(palabraBuscada + ": " + resultadoLegible.toString());
+                    System.out.print(sb.toString());
                 }
             }
         }
