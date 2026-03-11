@@ -78,4 +78,12 @@ public class ThesauroGestion implements Serializable {
     public ArrayList<String> getSinonimos(String palabra) {
         return mapaSinonimos.getOrDefault(palabra, new ArrayList<>());
     }
+
+    // Método para mostrar el contenido del Thesauro (para depuración)
+    public void mostrarContenido() {
+        mapaSinonimos.forEach((clave, sinonimos) -> {
+            System.out.println(clave + " -> " + sinonimos);
+        });
+    }
 }
+
