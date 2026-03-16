@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<biblioteca>
+  <libro id="01">
+    <titulo>El Quijote</titulo>
+    <autor>Miguel de Cervantes</autor>
+    <anio>1605</anio>
+  </libro>
+  <libro id="02">
+    <titulo>Cien años de soledad</titulo>
+    <autor>Gabriel García Márquez</autor>
+    <anio>1967</anio>
+  </libro>
+</biblioteca>

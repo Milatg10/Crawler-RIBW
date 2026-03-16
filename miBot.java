@@ -80,7 +80,7 @@ public class miBot {
                 System.err.println("Error guardando caché: " + e.getMessage());
             }
         }
-        thesauro.mostrarContenido(); // Para depuración: muestra el contenido del thesauro
+        //thesauro.mostrarContenido(); // Para depuración: muestra el contenido del thesauro
         emitirResultados(diccionario, listaArchivos, rutaSalida, thesauro);
     }
 
