@@ -1,16 +1,12 @@
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Queue;
 import java.util.List;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.pdf.PDFParser;
-import org.apache.tika.parser.AutoDetectParser;
 
 
 public class ListIt {
@@ -45,21 +41,11 @@ public class ListIt {
             //Switch para saltar las extensiones que NO queremos o elegir las que SÍ queremos
             switch (extension) {
                 case "txt":
-                case "csv":
+                case "csv": 
                 case "md":
                 case "cpp":
                 case "java":
                 case "json":
-                    String pathAbsoluto = f.getAbsolutePath();
-                    
-                    // Asignamos ID. Como se inserta al final, el índice será el tamaño actual de la lista.
-                    Integer idArchivo = listaArchivos.size(); 
-                    listaArchivos.add(pathAbsoluto);
-
-                    FichContPalabras lector = new FichContPalabras();
-                    // Pasamos el ID al lector
-                    lector.acumularPalabras(f.toPath(), idArchivo, diccionario, thesauro);
-                    break;
                 case "pdf":
                 case "xml":
                 case "html":

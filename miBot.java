@@ -112,7 +112,7 @@ public class miBot {
             // Set para no repetir el archivo abajo si ya apareció arriba con la palabra literal
             Set<Integer> docsYaProcesados = new HashSet<>();
 
-            // 1. BLOQUE DE LA PALABRA LITERAL ("ababol")
+            //BLOQUE DE LA PALABRA LITERAL ("ababol")
             if (diccionario.containsKey(palabraBuscada)) {
                 Ocurrencia oc = diccionario.get(palabraBuscada);
                 int ftg = oc.getFTG();
@@ -126,7 +126,7 @@ public class miBot {
                 }
             }
 
-            // 2. BLOQUE DE LOS SINÓNIMOS ("amapola", "necio"...)
+            //BLOQUE DE LOS SINÓNIMOS ("amapola", "necio"...)
             ArrayList<String> sinonimos = thesauro.getSinonimos(palabraBuscada);
             for (String sin : sinonimos) {
                 if (diccionario.containsKey(sin)) {
@@ -146,13 +146,13 @@ public class miBot {
                 }
             }
 
-            // 3. ORDENAR AMBOS BLOQUES POR EL PESO (FT / FTG) DE MAYOR A MENOR
+            //ORDENAR AMBOS BLOQUES POR EL PESO (FT / FTG) DE MAYOR A MENOR
             // Compara la posición [4] del array, que es donde guardamos el 'peso' (el double)
             Comparator<Object[]> comparadorPeso = (a, b) -> Double.compare((Double) b[4], (Double) a[4]);
             listaLiterales.sort(comparadorPeso);
             listaSinonimos.sort(comparadorPeso);
 
-            // 4. IMPRIMIR LOS RESULTADOS (Primero toda la lista literal, luego toda la lista de sinónimos)
+            //IMPRIMIR LOS RESULTADOS (Primero toda la lista literal, luego toda la lista de sinónimos)
             if (listaLiterales.isEmpty() && listaSinonimos.isEmpty()) {
                 System.out.println("La palabra '" + palabraBuscada + "' y sus sinónimos no se encuentran indexados.");
             } else {
